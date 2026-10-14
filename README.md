@@ -36,7 +36,7 @@ At [console.firebase.google.com](https://console.firebase.google.com):
 6. **Project settings → Your apps → Web (</>)** → register an app → copy the `firebaseConfig` values into `config.js`.
 
 ### 2. GitHub Pages
-Repository **Settings → Pages** → Source: *Deploy from a branch* → `main` / root. The site appears at `https://divyeshkothiya96-ux.github.io/leedsmandir.attendance/` a minute or two later.
+Repository **Settings → Pages** → Source: *Deploy from a branch* → `main` / root. The site appears at `https://divyeshkothiya96-ux.github.io/Leedsmandir.attendance/` a minute or two later.
 
 ## Changing the categories or event names
 
