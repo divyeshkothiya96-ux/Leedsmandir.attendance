@@ -4,12 +4,12 @@
 // (firestore.rules) are what keep the data safe.
 window.ATTENDANCE_CONFIG = {
   firebase: {
-    apiKey: "PASTE_API_KEY",
-    authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-    projectId: "PASTE_PROJECT_ID",
-    storageBucket: "PASTE_PROJECT_ID.firebasestorage.app",
-    messagingSenderId: "PASTE_SENDER_ID",
-    appId: "PASTE_APP_ID"
+    apiKey: "AIzaSyDylHnoP0gOsQtuYWCmx7_dUJ0q0_NtAmg",
+    authDomain: "attendance-app-c2313.firebaseapp.com",
+    projectId: "attendance-app-c2313",
+    storageBucket: "attendance-app-c2313.firebasestorage.app",
+    messagingSenderId: "602047101305",
+    appId: "1:602047101305:web:bce0554801058d804fd7a8"
   },
 
   // People type just "door" or "admin" on the sign-in screen; this is added after it.
