@@ -1,4 +1,4 @@
-# Mandir Attendance
+# Leeds Mandir Attendance
 
 A live headcount for mandir event days (Diwali, Annakut, Ravi Sabha, Utsav and Samaiyo days). Volunteers open the link on their phones, sign in with the door login, and tap the category button for each person who comes in: BM, KM, YM, SM in blue and mBM, mKM, mYM, mSM in pink. Every phone shows the same running totals, and the Report tab breaks them down by category, hour and door.
 

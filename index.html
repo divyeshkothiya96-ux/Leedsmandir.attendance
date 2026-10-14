@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mandir Attendance</title>
+<title>Leeds Mandir Attendance</title>
 <meta name="description" content="Live headcount by category for mandir event days. Volunteers tap at each door and everyone sees one shared total.">
-<meta name="theme-color" content="#14111F" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#F4F1F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#170F16" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FAF4E8" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Attendance">
+<meta name="apple-mobile-web-app-title" content="Leeds Mandir">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23F4A62A'/%3E%3Ctext x='32' y='43' font-size='30' text-anchor='middle' font-family='Georgia,serif' fill='%232B1800'%3E%2B1%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,9 +19,22 @@
 <script type="module" src="app.js"></script>
 </head>
 <body>
+<div class="toran" aria-hidden="true"></div>
 <div class="app">
   <header class="top">
-    <div class="brand"><span class="mark" aria-hidden="true"></span><h1 id="templeName">Mandir Attendance</h1></div>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 30" aria-hidden="true">
+        <path class="flag" d="M12 0.8 L19.5 2.8 L12 4.8 Z"/>
+        <path class="pole" d="M12 0.8 V7"/>
+        <circle cx="12" cy="7.6" r="1.6"/>
+        <ellipse cx="12" cy="10.4" rx="3.6" ry="1.3"/>
+        <path d="M6 27 C6 19 8 13.6 12 11.4 C16 13.6 18 19 18 27 Z"/>
+        <path class="cut" d="M7.6 16 H16.4 M6.8 20 H17.2 M6.3 24 H17.7"/>
+        <path class="door" d="M10.4 27 V23.4 A1.6 1.6 0 0 1 13.6 23.4 V27 Z"/>
+        <rect x="3" y="26.6" width="18" height="2.6" rx="0.6"/>
+      </svg>
+      <h1 id="templeName">Leeds Mandir Attendance</h1>
+    </div>
     <div class="sync" id="sync" data-state="idle" role="status"><span class="dot"></span><span id="syncText">Starting…</span></div>
   </header>
 
@@ -36,6 +49,7 @@
   <!-- LOGIN -->
   <section id="view-login" class="view" hidden>
     <form class="form login" id="loginForm" novalidate>
+      <span class="lotus" aria-hidden="true"></span>
       <h2 class="section-h">Sign in to count</h2>
       <p class="lead">Use the door login the temple gave you. You stay signed in on this phone.</p>
       <div class="field">
@@ -73,6 +87,7 @@
         <button class="event-chip" id="eventChip" type="button" aria-label="Change event"><span class="n" id="chipName">—</span><span class="d" id="chipDate"></span><span class="chev" aria-hidden="true">›</span></button>
 
         <div class="total-row">
+          <span class="mandala" aria-hidden="true"></span>
           <div class="total-block">
             <div class="eyebrow">Inside so far, all doors</div>
             <div class="total" id="total" aria-live="polite">0</div>
@@ -142,13 +157,11 @@
             <input id="newName" type="text" maxlength="60" placeholder="e.g. Annakut">
           </div>
           <div class="chips" id="eventChips" role="group" aria-label="Event types"></div>
-          <div class="row-2">
-            <div class="field">
-              <label for="newDate">Date</label>
-              <input id="newDate" type="date">
-            </div>
-            <button class="btn" id="newStart" type="submit">Start counting</button>
+          <div class="field">
+            <label for="newDate">Date</label>
+            <input id="newDate" type="date">
           </div>
+          <button class="btn btn-block" id="newStart" type="submit">Start counting</button>
           <div class="msg" id="newMsg" role="alert"></div>
         </form>
       </div>
@@ -162,13 +175,11 @@
 
       <div class="panel" id="namePanel" hidden>
         <div class="panel-h"><h3>Temple name</h3><span>shown at the top for everyone</span></div>
-        <div class="row-2">
-          <div class="field">
-            <label for="templeInput">Name</label>
-            <input id="templeInput" type="text" maxlength="60" placeholder="Mandir Attendance">
-          </div>
-          <button class="btn btn-ghost" id="templeSave" type="button">Save name</button>
+        <div class="field">
+          <label for="templeInput">Name</label>
+          <input id="templeInput" type="text" maxlength="60" placeholder="Leeds Mandir Attendance">
         </div>
+        <button class="btn btn-ghost btn-block" id="templeSave" type="button">Save name</button>
         <div class="msg" id="nameMsg" role="alert"></div>
       </div>
 
@@ -178,6 +189,8 @@
       </div>
     </section>
   </div>
+
+  <footer class="foot" aria-hidden="true"><span class="rule"></span><span class="lotus"></span><span class="rule"></span></footer>
 </div>
 </body>
 </html>

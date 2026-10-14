@@ -1,19 +1,21 @@
 /* Layout: one narrow column built for a phone held at the door. The eight category buttons sit in two
    columns (blue, pink), dark to light, inside the thumb zone; reports and events live behind tabs.
-   Dark first for a dim temple hall, light when the phone asks for it. */
+   Temple touches stay at the edges: a marigold toran along the top, a shikhara mark, lotus and rangoli
+   motifs, sandalwood and kumkum tones. Dark first for an evening hall, light when the phone asks for it. */
 :root {
-  --bg: #14111F;
-  --surface: #1E1A2D;
-  --surface-2: #29233C;
-  --line: #372F4D;
-  --fg: #F3EEE4;
-  --muted: #A99FC0;
+  --bg: #170F16;
+  --surface: #221721;
+  --surface-2: #2F202D;
+  --line: #432E3F;
+  --fg: #F7EFE3;
+  --muted: #BDA8AE;
   --marigold: #F4A62A;
   --marigold-ink: #F7B64C;
   --on-marigold: #2B1800;
   --marigold-soft: rgba(244, 166, 42, 0.15);
-  --kumkum: #EE6A82;
+  --kumkum: #EF6B7C;
   --tulsi: #66C887;
+  --motif: rgba(244, 166, 42, 0.10);
   --f-display: "Rozha One", Georgia, "Times New Roman", serif;
   --f-body: "Hind", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-data: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -21,18 +23,19 @@
 }
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #F4F1F8;
-    --surface: #FFFFFF;
-    --surface-2: #ECE6F4;
-    --line: #DAD2E7;
-    --fg: #1C1829;
-    --muted: #5F5775;
+    --bg: #FAF4E8;
+    --surface: #FFFDF8;
+    --surface-2: #F3E9D6;
+    --line: #E6D6BA;
+    --fg: #2A1712;
+    --muted: #765F52;
     --marigold: #F2A12C;
-    --marigold-ink: #925400;
+    --marigold-ink: #8F4F00;
     --on-marigold: #2B1800;
-    --marigold-soft: rgba(242, 161, 44, 0.18);
-    --kumkum: #B02843;
+    --marigold-soft: rgba(242, 161, 44, 0.2);
+    --kumkum: #A3203A;
     --tulsi: #23804A;
+    --motif: rgba(196, 112, 20, 0.12);
     color-scheme: light;
   }
 }
@@ -59,24 +62,29 @@ code { font-family: var(--f-data); font-size: 0.9em; background: var(--surface-2
   margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  padding-top: 10px;
   padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+/* Marigold toran across the top of the page */
+.toran {
+  height: calc(28px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  background: url("img/toran.svg") repeat-x left bottom / 60px 28px;
+  opacity: 0.95;
+}
+
 /* Header */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.mark {
-  width: 22px; height: 22px; flex: none; border-radius: 50%;
-  background:
-    radial-gradient(circle, var(--marigold) 0 38%, transparent 40%),
-    repeating-conic-gradient(var(--marigold) 0 14deg, transparent 14deg 30deg);
-  -webkit-mask: radial-gradient(circle closest-side, #000 96%, transparent 100%);
-          mask: radial-gradient(circle closest-side, #000 96%, transparent 100%);
-}
+.mark { width: 24px; height: 30px; flex: none; fill: var(--marigold); }
+.mark .flag { fill: var(--kumkum); }
+.mark .pole { stroke: var(--marigold); stroke-width: 0.9; fill: none; }
+.mark .cut { stroke: var(--bg); stroke-width: 0.7; fill: none; }
+.mark .door { fill: var(--bg); }
 h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45rem; line-height: 1.1; text-wrap: balance; overflow-wrap: anywhere; }
 .sync { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
 .sync .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
@@ -104,7 +112,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
 .event-chip .d { font-family: var(--f-data); font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
 .event-chip .chev { color: var(--muted); }
 
-.total-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
+.total-row { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
 .total-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .eyebrow { font-size: 0.76rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 .total { font-family: var(--f-display); font-size: clamp(60px, 19vw, 104px); line-height: 0.95; font-variant-numeric: tabular-nums; padding-top: 6px; }
@@ -122,6 +130,26 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
 .door input:focus { outline: none; border-bottom-color: var(--marigold); }
 .door .dc { font-family: var(--f-data); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
 .door .dc small { font-family: var(--f-body); color: var(--muted); font-size: 0.8rem; margin-right: 6px; }
+
+/* Faint rangoli mandala behind the total */
+.mandala {
+  position: absolute; right: -28px; top: 50%; width: 190px; height: 190px; transform: translateY(-50%);
+  background: var(--motif);
+  -webkit-mask: url("img/mandala.svg") center / contain no-repeat;
+          mask: url("img/mandala.svg") center / contain no-repeat;
+  pointer-events: none;
+}
+.total-row > :not(.mandala) { position: relative; }
+
+/* Lotus mark, drawn in the theme's marigold */
+.lotus {
+  display: block; width: 46px; height: 29px; background: var(--marigold);
+  -webkit-mask: url("img/lotus.svg") center / contain no-repeat;
+          mask: url("img/lotus.svg") center / contain no-repeat;
+}
+.foot { display: flex; align-items: center; gap: 12px; padding-top: 18px; }
+.foot .rule { flex: 1; height: 1px; background: var(--line); }
+.foot .lotus { width: 34px; height: 21px; opacity: 0.85; }
 
 /* Category buttons: two columns, dark to light */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -163,12 +191,30 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
 /* Forms */
 .start { display: flex; flex-direction: column; gap: 14px; }
 .form { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
-.login { gap: 14px; padding: 20px; margin-top: 8px; }
+.login {
+  position: relative; overflow: hidden; gap: 14px; margin-top: 8px;
+  padding: 34px 20px 22px;
+  border-radius: 50% 50% 18px 18px / 120px 120px 18px 18px; /* temple doorway arch */
+  border-color: var(--marigold);
+}
+.login::before {
+  content: ""; position: absolute; left: 50%; top: -70px; width: 260px; height: 260px; transform: translateX(-50%);
+  background: var(--motif);
+  -webkit-mask: url("img/mandala.svg") center / contain no-repeat;
+          mask: url("img/mandala.svg") center / contain no-repeat;
+  pointer-events: none;
+}
+.login > * { position: relative; }
+.login .lotus { align-self: center; }
+.login .section-h, .login .lead { text-align: center; align-self: center; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
 .field input {
-  width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 1rem;
+  width: 100%; min-width: 0; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 1rem;
 }
+/* iPhone date fields ignore width unless their native look is turned off */
+.field input[type="date"] { -webkit-appearance: none; appearance: none; display: block; min-height: 46px; text-align: left; }
+.field input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .field input:focus { outline: none; border-color: var(--marigold); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 5px 12px 3px; font-size: 0.9rem; }
@@ -180,6 +226,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
   background: var(--marigold); color: var(--on-marigold);
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-block { width: 100%; }
 .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--fg); }
 .msg { font-size: 0.88rem; color: var(--kumkum); }
 .msg:empty { display: none; }

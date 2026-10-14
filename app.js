@@ -108,6 +108,7 @@ function updateSync() {
   else if (S.savedOnce) { state = "saved"; text = "Saved"; }
   $("sync").dataset.state = state;
   $("syncText").textContent = text;
+  $("sync").hidden = configured && S.authReady && !S.user; // nothing to report on the sign-in screen
 }
 window.addEventListener("online", updateSync);
 window.addEventListener("offline", updateSync);
@@ -244,8 +245,8 @@ function render() {
   $("view-login").hidden = !configured || !S.authReady || !!S.user;
   $("signedIn").hidden = !S.user;
   const name = String(S.settings.name || "").trim();
-  $("templeName").textContent = name || "Mandir Attendance";
-  document.title = name ? `${name} · Attendance` : "Mandir Attendance";
+  $("templeName").textContent = name || "Leeds Mandir Attendance";
+  document.title = name || "Leeds Mandir Attendance";
   updateSync();
   if (!S.user) return;
 
