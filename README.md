@@ -1,4 +1,4 @@
-# Leeds Mandir Attendance
+# Leeds Mandir Footfall Counts
 
 A live headcount for mandir event days (Diwali, Annakut, Ravi Sabha, Utsav and Samaiyo days). Volunteers open the link on their phones, sign in with the door login, and tap the category button for each person who comes in: BM, KM, YM, SM in blue and mBM, mKM, mYM, mSM in pink. Every phone shows the same running totals, and the Report tab breaks them down by category, hour and door.
 
@@ -40,7 +40,7 @@ Repository **Settings → Pages** → Source: *Deploy from a branch* → `main` 
 
 ## Changing the categories or event names
 
-Both live in `config.js`: `categories` sets the buttons (code, column and colours, dark to light) and `eventTypes` sets the quick event names. Don't rename a category code once counting has started, because the counts are stored under the code.
+Both live in `config.js`: `categories` sets the buttons (code, column and colours, light for children to dark for adults) and `eventTypes` sets the quick event names. Don't rename a category code once counting has started, because the counts are stored under the code.
 
 ## Changing a password
 

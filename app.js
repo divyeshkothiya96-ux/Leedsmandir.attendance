@@ -14,14 +14,14 @@ const GROUPS = cfg.groups || [
   { id: "pink", name: "Pink", chart: "#E11D48", chartDark: "#F43F5E" },
 ];
 const CATS = cfg.categories || [
-  { code: "BM", group: "blue", color: "#1E3A8A", text: "#FFFFFF" },
-  { code: "KM", group: "blue", color: "#2563EB", text: "#FFFFFF" },
-  { code: "YM", group: "blue", color: "#60A5FA", text: "#0B1B3F" },
-  { code: "SM", group: "blue", color: "#BFDBFE", text: "#0B1B3F" },
-  { code: "mBM", group: "pink", color: "#9F1239", text: "#FFFFFF" },
-  { code: "mKM", group: "pink", color: "#E11D48", text: "#FFFFFF" },
-  { code: "mYM", group: "pink", color: "#FB7185", text: "#3B0712" },
-  { code: "mSM", group: "pink", color: "#FECDD3", text: "#3B0712" },
+  { code: "BM", group: "blue", color: "#BFDBFE", text: "#0B1B3F" },
+  { code: "KM", group: "blue", color: "#60A5FA", text: "#0B1B3F" },
+  { code: "YM", group: "blue", color: "#2563EB", text: "#FFFFFF" },
+  { code: "SM", group: "blue", color: "#1E3A8A", text: "#FFFFFF" },
+  { code: "mBM", group: "pink", color: "#FECDD3", text: "#3B0712" },
+  { code: "mKM", group: "pink", color: "#FB7185", text: "#3B0712" },
+  { code: "mYM", group: "pink", color: "#E11D48", text: "#FFFFFF" },
+  { code: "mSM", group: "pink", color: "#9F1239", text: "#FFFFFF" },
 ];
 const EVENT_TYPES = cfg.eventTypes || ["Diwali", "Annakut", "Ravi Sabha", "Utsav Day", "Samaiyo Day"];
 const CODES = CATS.map((c) => c.code);
@@ -230,7 +230,7 @@ const currentEvent = () => S.events.find((e) => e.id === S.eventId) || null;
 function buildTiles() {
   $("tiles").innerHTML = GROUPS.map((g) => `
     <div class="col" role="group" aria-label="${esc(g.name)}">
-      <div class="col-h"><span class="g" style="--sw:${esc(catsOf(g.id)[0] ? catsOf(g.id)[0].color : "#888")}"><i></i>${esc(g.name)}</span><span class="gt" id="gt-${esc(g.id)}">0</span></div>
+      <div class="col-h"><span class="g" style="--sw:${esc(catsOf(g.id).length ? catsOf(g.id).at(-1).color : "#888")}"><i></i>${esc(g.name)}</span><span class="gt" id="gt-${esc(g.id)}">0</span></div>
       ${catsOf(g.id).map((c) => `<button class="tile" type="button" data-cat="${esc(c.code)}" style="--c:${esc(c.color)};--t:${esc(c.text)}" aria-label="Add one ${esc(c.code)}"><span class="code">${esc(c.code)}</span><span class="cnt" id="cnt-${esc(c.code)}">0</span></button>`).join("")}
     </div>`).join("");
 }
@@ -245,8 +245,8 @@ function render() {
   $("view-login").hidden = !configured || !S.authReady || !!S.user;
   $("signedIn").hidden = !S.user;
   const name = String(S.settings.name || "").trim();
-  $("templeName").textContent = name || "Leeds Mandir Attendance";
-  document.title = name || "Leeds Mandir Attendance";
+  $("templeName").textContent = name || "Leeds Mandir Footfall Counts";
+  document.title = name || "Leeds Mandir Footfall Counts";
   updateSync();
   if (!S.user) return;
 
@@ -338,7 +338,7 @@ function renderReport() {
     const list = catsOf(g.id);
     const max = Math.max(1, ...list.map((c) => pos(cats[c.code])));
     return `<div class="cgroup">
-      <div class="cgroup-h"><span class="g" style="--sw:${esc(list[0] ? list[0].color : "#888")}"><i></i>${esc(g.name)}</span><span class="gt">${num(gt)} · ${pct(gt, total)}</span></div>
+      <div class="cgroup-h"><span class="g" style="--sw:${esc(list.length ? list.at(-1).color : "#888")}"><i></i>${esc(g.name)}</span><span class="gt">${num(gt)} · ${pct(gt, total)}</span></div>
       ${list.map((c) => { const v = pos(cats[c.code]); return `<div class="crow" style="--c:${esc(c.color)}"><span class="sw"></span><span class="nm">${esc(c.code)}</span><span class="ct">${num(v)}</span><span class="pc">${pct(v, total)}</span><span class="track"><span class="fill" style="width:${(v / max) * 100}%"></span></span></div>`; }).join("")}
     </div>`;
   }).join("");

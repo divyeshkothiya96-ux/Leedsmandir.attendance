@@ -20,7 +20,7 @@ window.ATTENDANCE_CONFIG = {
   // Keep this in step with the admin list in firestore.rules.
   adminEmails: ["admin@mandir.local"],
 
-  // The counting buttons, top to bottom in each column (dark to light).
+  // The counting buttons, top to bottom in each column: light (children) to dark (adults).
   // `color` is the button colour, `text` the writing on it.
   // Codes are stored with the counts, so don't rename a code after counting has started.
   groups: [
@@ -28,14 +28,14 @@ window.ATTENDANCE_CONFIG = {
     { id: "pink", name: "Pink", chart: "#E11D48", chartDark: "#F43F5E" }
   ],
   categories: [
-    { code: "BM",  group: "blue", color: "#1E3A8A", text: "#FFFFFF" },
-    { code: "KM",  group: "blue", color: "#2563EB", text: "#FFFFFF" },
-    { code: "YM",  group: "blue", color: "#60A5FA", text: "#0B1B3F" },
-    { code: "SM",  group: "blue", color: "#BFDBFE", text: "#0B1B3F" },
-    { code: "mBM", group: "pink", color: "#9F1239", text: "#FFFFFF" },
-    { code: "mKM", group: "pink", color: "#E11D48", text: "#FFFFFF" },
-    { code: "mYM", group: "pink", color: "#FB7185", text: "#3B0712" },
-    { code: "mSM", group: "pink", color: "#FECDD3", text: "#3B0712" }
+    { code: "BM",  group: "blue", color: "#BFDBFE", text: "#0B1B3F" },
+    { code: "KM",  group: "blue", color: "#60A5FA", text: "#0B1B3F" },
+    { code: "YM",  group: "blue", color: "#2563EB", text: "#FFFFFF" },
+    { code: "SM",  group: "blue", color: "#1E3A8A", text: "#FFFFFF" },
+    { code: "mBM", group: "pink", color: "#FECDD3", text: "#3B0712" },
+    { code: "mKM", group: "pink", color: "#FB7185", text: "#3B0712" },
+    { code: "mYM", group: "pink", color: "#E11D48", text: "#FFFFFF" },
+    { code: "mSM", group: "pink", color: "#9F1239", text: "#FFFFFF" }
   ],
 
   // Quick names offered when starting an event (any other name can be typed).

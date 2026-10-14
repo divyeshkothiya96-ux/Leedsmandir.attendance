@@ -85,7 +85,7 @@ code { font-family: var(--f-data); font-size: 0.9em; background: var(--surface-2
 .mark .pole { stroke: var(--marigold); stroke-width: 0.9; fill: none; }
 .mark .cut { stroke: var(--bg); stroke-width: 0.7; fill: none; }
 .mark .door { fill: var(--bg); }
-h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45rem; line-height: 1.1; text-wrap: balance; overflow-wrap: anywhere; }
+h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(1.05rem, 4.6vw, 1.45rem); line-height: 1.1; text-wrap: balance; overflow-wrap: anywhere; }
 .sync { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
 .sync .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .sync[data-state="saved"] .dot { background: var(--tulsi); }
@@ -99,7 +99,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
 
 .notice { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; font-size: 0.95rem; }
 .view { display: flex; flex-direction: column; gap: 18px; }
-.view.tight { gap: 14px; }
+.view.tight { gap: 10px; }
 .lead { margin: 0; color: var(--muted); max-width: 60ch; }
 .section-h { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.6rem; line-height: 1.15; text-wrap: balance; }
 
@@ -115,7 +115,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
 .total-row { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
 .total-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .eyebrow { font-size: 0.76rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
-.total { font-family: var(--f-display); font-size: clamp(60px, 19vw, 104px); line-height: 0.95; font-variant-numeric: tabular-nums; padding-top: 6px; }
+.total { font-family: var(--f-display); font-size: clamp(46px, 13vw, 88px); line-height: 0.95; font-variant-numeric: tabular-nums; padding-top: 6px; }
 .sub { font-size: 0.9rem; color: var(--muted); padding-bottom: 6px; }
 
 .door {
@@ -160,15 +160,15 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 1.45
 .col-h .gt { font-family: var(--f-data); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
 .tile {
   position: relative; overflow: hidden;
-  min-height: 74px; padding: 8px 14px;
+  min-height: 92px; padding: 10px 16px;
   border-radius: 14px; border: 1px solid rgba(0, 0, 0, 0.14);
   background: var(--c); color: var(--t);
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   text-align: left; transition: transform 80ms ease-out;
   user-select: none; -webkit-user-select: none;
 }
-.tile .code { font-weight: 600; font-size: 1.5rem; line-height: 1; letter-spacing: 0.01em; }
-.tile .cnt { font-family: var(--f-data); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.tile .code { font-weight: 600; font-size: 1.9rem; line-height: 1; letter-spacing: 0.01em; }
+.tile .cnt { font-family: var(--f-data); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
 .tile:active { transform: scale(0.97); }
 .tile:disabled { opacity: 0.4; cursor: not-allowed; }
 .tile .pop {
