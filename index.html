@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mandir Attendance</title>
+<meta name="description" content="Live headcount for mandir events. Volunteers tap at each door and everyone sees one shared total.">
+<meta name="theme-color" content="#14111F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F4F1F8" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Attendance">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23F4A62A'/%3E%3Ctext x='32' y='43' font-size='30' text-anchor='middle' font-family='Georgia,serif' fill='%232B1800'%3E%2B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Rozha+One&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><h1 id="templeName">Mandir Attendance</h1></div>
+    <div class="sync" id="sync" data-state="idle" role="status"><span class="dot"></span><span id="syncText">Starting…</span></div>
+  </header>
+
+  <!-- SETUP (shown until config.js has the Firebase details) -->
+  <section id="view-setup" class="view" hidden>
+    <div class="panel">
+      <h2 class="section-h">Almost ready</h2>
+      <p class="lead">This counter isn't connected to its database yet. Add the Firebase details to <code>config.js</code> in the GitHub repository, and this page will show the sign-in screen.</p>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section id="view-login" class="view" hidden>
+    <form class="form login" id="loginForm" novalidate>
+      <h2 class="section-h">Sign in to count</h2>
+      <p class="lead">Use the door login the temple gave you. You stay signed in on this phone.</p>
+      <div class="field">
+        <label for="loginUser">Username</label>
+        <input id="loginUser" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="door">
+      </div>
+      <div class="field">
+        <label for="loginPass">Password</label>
+        <input id="loginPass" type="password" autocomplete="current-password">
+      </div>
+      <button class="btn" id="loginBtn" type="submit">Sign in</button>
+      <div class="msg" id="loginMsg" role="alert"></div>
+    </form>
+  </section>
+
+  <!-- SIGNED IN -->
+  <div id="signedIn" class="view" hidden>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-count" data-tab="count" aria-selected="true">Count</button>
+      <button role="tab" id="tab-report" data-tab="report" aria-selected="false">Report</button>
+      <button role="tab" id="tab-events" data-tab="events" aria-selected="false">Events</button>
+    </nav>
+
+    <div id="notice" class="notice" role="status" hidden></div>
+
+    <!-- COUNT -->
+    <section id="view-count" class="view" aria-labelledby="tab-count">
+      <div id="countEmpty" class="start" hidden>
+        <h2 class="section-h" id="startTitle">Start today's count</h2>
+        <p class="lead" id="startText">Name the occasion, then share the link and door login with whoever is on each door. Every phone adds to one live total.</p>
+        <div id="countSlot"></div>
+      </div>
+
+      <div id="countMain" class="view" hidden>
+        <button class="event-chip" id="eventChip" type="button" aria-label="Change event"><span class="n" id="chipName">—</span><span class="d" id="chipDate"></span><span class="chev" aria-hidden="true">›</span></button>
+
+        <div class="total-block">
+          <div class="eyebrow">Inside so far, all doors</div>
+          <div class="total" id="total" aria-live="polite">0</div>
+          <div class="sub" id="phones">Waiting for the first arrival</div>
+        </div>
+
+        <div class="door">
+          <label for="doorInput">Counting at</label>
+          <input id="doorInput" type="text" maxlength="40" autocomplete="off" spellcheck="false" value="Main door">
+          <span class="dc"><small>this door</small><span id="doorCount">0</span></span>
+        </div>
+
+        <div class="tapwrap">
+          <button class="tap" id="tap" type="button" aria-label="Add one person"><span class="p">+1</span><span class="s">Tap for each person</span></button>
+          <div class="floaters" id="floaters" aria-hidden="true"></div>
+        </div>
+
+        <div class="quick">
+          <button class="q q-minus" id="minus" type="button" aria-label="Take one away">−1<small>undo</small></button>
+          <button class="q" id="plus2" type="button" aria-label="Add two people">+2</button>
+          <button class="q" id="plus5" type="button" aria-label="Add five people">+5</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section id="view-report" class="view" aria-labelledby="tab-report" hidden>
+      <div id="reportEmpty" class="empty" hidden>Pick an event under Events to see its report.</div>
+      <div id="reportMain" class="view" hidden>
+        <div class="total-block">
+          <div class="eyebrow" id="repDate"></div>
+          <h2 class="section-h" id="repName"></h2>
+        </div>
+        <div class="panel">
+          <div class="stats">
+            <div class="stat"><span class="eyebrow">Total attendance</span><span class="v" id="repTotal">0</span></div>
+            <div class="stat"><span class="eyebrow">Busiest hour</span><span class="v small" id="repPeak">—</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h3>By door</h3><span id="repDoorsNote"></span></div>
+          <div class="doors" id="repDoors"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h3>Arrivals by hour</h3><span>local time</span></div>
+          <div class="chart" id="repChart"></div>
+        </div>
+        <div class="row-2">
+          <button class="btn btn-ghost" id="csvEvent" type="button">Download this event as CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENTS -->
+    <section id="view-events" class="view" aria-labelledby="tab-events" hidden>
+      <div id="eventsSlot">
+        <form class="form" id="newEvent" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="newName">Occasion</label>
+            <input id="newName" type="text" maxlength="60" placeholder="e.g. Sandhya Aarti">
+          </div>
+          <div class="chips" role="group" aria-label="Quick names">
+            <button class="chip" type="button" id="chip-darshan">Darshan</button>
+            <button class="chip" type="button" id="chip-mangla">Mangla Aarti</button>
+            <button class="chip" type="button" id="chip-sandhya">Sandhya Aarti</button>
+            <button class="chip" type="button" id="chip-satsang">Satsang</button>
+            <button class="chip" type="button" id="chip-festival">Festival day</button>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="newDate">Date</label>
+              <input id="newDate" type="date">
+            </div>
+            <button class="btn" id="newStart" type="submit">Start counting</button>
+          </div>
+          <div class="msg" id="newMsg" role="alert"></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-h"><h3>Events</h3><span id="eventsNote"></span></div>
+        <div class="elist" id="elist"><div class="empty">Loading events…</div></div>
+        <div class="row-2"><button class="btn btn-ghost" id="csvAll" type="button" hidden>Download all totals as CSV</button></div>
+        <div class="msg" id="evMsg" role="alert"></div>
+      </div>
+
+      <div class="panel" id="namePanel" hidden>
+        <div class="panel-h"><h3>Temple name</h3><span>shown at the top for everyone</span></div>
+        <div class="row-2">
+          <div class="field">
+            <label for="templeInput">Name</label>
+            <input id="templeInput" type="text" maxlength="60" placeholder="Mandir Attendance">
+          </div>
+          <button class="btn btn-ghost" id="templeSave" type="button">Save name</button>
+        </div>
+        <div class="msg" id="nameMsg" role="alert"></div>
+      </div>
+
+      <div class="account">
+        <span>Signed in as <strong id="whoami"></strong></span>
+        <button class="small-btn" id="signOut" type="button">Sign out</button>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>
