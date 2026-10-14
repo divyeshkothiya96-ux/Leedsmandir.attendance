@@ -1,15 +1,15 @@
 # Mandir Attendance
 
-A live headcount for mandir events. Volunteers open the link on their phones, sign in with the door login, and tap once for each person who comes in. Every phone shows the same running total, and the Report tab breaks it down by door and by hour.
+A live headcount for mandir event days (Diwali, Annakut, Ravi Sabha, Utsav and Samaiyo days). Volunteers open the link on their phones, sign in with the door login, and tap the category button for each person who comes in: BM, KM, YM, SM in blue and mBM, mKM, mYM, mSM in pink. Every phone shows the same running totals, and the Report tab breaks them down by category, hour and door.
 
 It runs as a plain web page on GitHub Pages, with Firebase (Google's free app platform) holding the counts and the logins.
 
 ## On the day
 
 1. Open the link and sign in. Volunteers use the username `door`; the admin uses `admin`. Each phone stays signed in.
-2. If today's event isn't running yet, pick a name (Darshan, Sandhya Aarti…) and tap **Start counting**. Phones that open the link later join today's event automatically.
-3. Type the door name under **Counting at**, then tap the big button once per person. `+2` and `+5` are for families; `−1` undoes a mis-tap.
-4. The **Report** tab shows the total, the busiest hour, each door's count and arrivals by hour. It can download a CSV.
+2. If today's event isn't running yet, pick it (Diwali, Annakut, Ravi Sabha, Utsav Day, Samaiyo Day, or type a name) and tap **Start counting**. Phones that open the link later join today's event automatically.
+3. Type the door name under **Counting at**, then tap the right category button once per person. **Undo last tap** takes back this phone's most recent taps, one at a time.
+4. The **Report** tab shows the total, the busiest hour, the counting window (first to last tap), every category with its share, arrivals by hour (blue and pink per hour, with an hour-by-category table) and each door's counts. It can download a CSV with all of it.
 
 Tips: add the page to the phone's home screen so it opens like an app. The screen stays awake on the Count tab. If the Wi-Fi drops, taps are kept on the phone and sent when it reconnects.
 
@@ -37,6 +37,10 @@ At [console.firebase.google.com](https://console.firebase.google.com):
 
 ### 2. GitHub Pages
 Repository **Settings → Pages** → Source: *Deploy from a branch* → `main` / root. The site appears at `https://<your-username>.github.io/mandir-attendance/` a minute or two later.
+
+## Changing the categories or event names
+
+Both live in `config.js`: `categories` sets the buttons (code, column and colours, dark to light) and `eventTypes` sets the quick event names. Don't rename a category code once counting has started, because the counts are stored under the code.
 
 ## Changing a password
 

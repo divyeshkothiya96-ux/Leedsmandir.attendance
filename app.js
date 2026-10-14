@@ -8,6 +8,25 @@ import {
 const cfg = window.ATTENDANCE_CONFIG || {};
 const $ = (id) => document.getElementById(id);
 
+// ---------- categories ----------
+const GROUPS = cfg.groups || [
+  { id: "blue", name: "Blue", chart: "#2563EB", chartDark: "#3B82F6" },
+  { id: "pink", name: "Pink", chart: "#E11D48", chartDark: "#F43F5E" },
+];
+const CATS = cfg.categories || [
+  { code: "BM", group: "blue", color: "#1E3A8A", text: "#FFFFFF" },
+  { code: "KM", group: "blue", color: "#2563EB", text: "#FFFFFF" },
+  { code: "YM", group: "blue", color: "#60A5FA", text: "#0B1B3F" },
+  { code: "SM", group: "blue", color: "#BFDBFE", text: "#0B1B3F" },
+  { code: "mBM", group: "pink", color: "#9F1239", text: "#FFFFFF" },
+  { code: "mKM", group: "pink", color: "#E11D48", text: "#FFFFFF" },
+  { code: "mYM", group: "pink", color: "#FB7185", text: "#3B0712" },
+  { code: "mSM", group: "pink", color: "#FECDD3", text: "#3B0712" },
+];
+const EVENT_TYPES = cfg.eventTypes || ["Diwali", "Annakut", "Ravi Sabha", "Utsav Day", "Samaiyo Day"];
+const CODES = CATS.map((c) => c.code);
+const catsOf = (gid) => CATS.filter((c) => c.group === gid);
+
 // ---------- helpers ----------
 const LS = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 const lsGet = (k) => { try { return LS ? LS.getItem(k) : null; } catch (e) { return null; } };
@@ -22,7 +41,9 @@ const fmtDate = (s) => {
   const d = new Date(s + "T12:00:00");
   return isNaN(d) ? s : d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 };
+const fmtTime = (ms) => new Date(ms).toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit", hour12: true }).replace(/\s/g, "");
 const num = (n) => Number(n || 0).toLocaleString("en-GB");
+const pct = (n, t) => t > 0 ? Math.round((n / t) * 100) + "%" : "–";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const csvCell = (v) => { const s = String(v == null ? "" : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
@@ -31,6 +52,16 @@ const loginDomain = String(cfg.loginDomain || "mandir.local").replace(/^@/, "");
 const toEmail = (u) => { u = String(u || "").trim().toLowerCase(); return u.includes("@") ? u : `${u}@${loginDomain}`; };
 const shortName = (email) => { const e = String(email || ""); return e.endsWith("@" + loginDomain) ? e.slice(0, -(loginDomain.length + 1)) : e; };
 const adminEmails = (cfg.adminEmails || []).map((e) => String(e).toLowerCase());
+const pos = (n) => Math.max(0, n || 0);
+
+// Chart colours follow the phone's light/dark setting.
+const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function applyGroupColours() {
+  const dark = darkQuery && darkQuery.matches;
+  for (const g of GROUPS) document.documentElement.style.setProperty(`--g-${g.id}`, dark ? (g.chartDark || g.chart) : g.chart);
+}
+applyGroupColours();
+if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener("change", applyGroupColours);
 
 // ---------- Firebase ----------
 const fb = cfg.firebase || {};
@@ -59,7 +90,7 @@ const S = {
   eventId: null, stations: new Map(), stationsLoaded: false,
   settings: {}, tab: "count", totals: new Map(),
   door: (lsGet("doorLabel") || "Main door").slice(0, 40),
-  armed: null, spin: 0, pending: 0, savedOnce: false, notice: "",
+  armed: null, pending: 0, savedOnce: false, notice: "", selHour: null,
   justCreated: null, justCreatedAt: 0,
 };
 let tally = null;
@@ -99,31 +130,45 @@ class Tally {
   constructor(eventId) {
     this.id = newId("p");
     this.ref = doc(db, "events", eventId, "stations", this.id);
-    this.count = 0; this.hours = {}; this.label = S.door;
+    this.count = 0; this.cats = {}; this.hours = {}; this.label = S.door;
+    this.undoStack = [];
     this.timer = null; this.startedAt = null; this.lastTap = 0;
     this.dirty = false; this.everWritten = false; this.dead = false;
   }
-  add(n) {
-    if (n > 0) {
-      const h = hourKey();
-      this.hours[h] = (this.hours[h] || 0) + n;
-      this.count += n;
-    } else {
-      let k = hourKey();
-      if (!(this.hours[k] > 0)) {
-        const ks = Object.keys(this.hours).filter((x) => this.hours[x] > 0).sort();
-        if (ks.length) k = ks[ks.length - 1];
-      }
-      this.hours[k] = (this.hours[k] || 0) - 1;
-      if (this.hours[k] === 0) delete this.hours[k];
-      this.count -= 1;
-    }
+  bump(cat, h, d) {
+    this.cats[cat] = (this.cats[cat] || 0) + d;
+    if (!this.cats[cat]) delete this.cats[cat];
+    const hb = this.hours[h] || (this.hours[h] = {});
+    hb[cat] = (hb[cat] || 0) + d;
+    if (!hb[cat]) delete hb[cat];
+    if (!Object.keys(hb).length) delete this.hours[h];
+    this.count += d;
+  }
+  add(cat) {
+    const h = hourKey();
+    this.bump(cat, h, 1);
+    this.undoStack.push({ cat, h, at: Date.now() });
+    if (this.undoStack.length > 200) this.undoStack.shift();
+    this.touch();
+  }
+  undo() {
+    const u = this.undoStack.pop();
+    if (!u) return null;
+    this.bump(u.cat, u.h, -1);
+    this.touch();
+    return u;
+  }
+  touch() {
     this.lastTap = Date.now();
     if (!this.startedAt) this.startedAt = this.lastTap;
     this.dirty = true; this.schedule();
   }
   setLabel(l) { this.label = l; if (this.count !== 0 || this.everWritten) { this.dirty = true; this.schedule(); } }
-  body() { return { label: this.label, count: this.count, hours: { ...this.hours }, startedAt: this.startedAt || Date.now(), updatedAt: this.lastTap || Date.now() }; }
+  body() {
+    const hours = {};
+    for (const [h, m] of Object.entries(this.hours)) hours[h] = { ...m };
+    return { label: this.label, count: this.count, cats: { ...this.cats }, hours, startedAt: this.startedAt || Date.now(), updatedAt: this.lastTap || Date.now() };
+  }
   schedule() { clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 300); }
   flushNow() { clearTimeout(this.timer); this.flush(); }
   flush() {
@@ -142,41 +187,65 @@ function rows() {
   const out = [];
   S.stations.forEach((d, id) => {
     if (tally && id === tally.id) return;
-    out.push({ id, label: d.label, count: +d.count || 0, hours: d.hours || {}, updatedAt: +d.updatedAt || 0 });
+    out.push({ id, label: d.label, count: +d.count || 0, cats: d.cats || {}, hours: d.hours || {}, startedAt: +d.startedAt || 0, updatedAt: +d.updatedAt || 0 });
   });
   if (tally && (tally.count !== 0 || tally.everWritten)) {
-    out.push({ id: tally.id, label: tally.label, count: tally.count, hours: tally.hours, updatedAt: tally.lastTap, mine: true });
+    out.push({ id: tally.id, label: tally.label, count: tally.count, cats: tally.cats, hours: tally.hours, startedAt: tally.startedAt, updatedAt: tally.lastTap, mine: true });
   }
   return out;
 }
+function sumCats(list) {
+  const t = {};
+  for (const c of CODES) t[c] = 0;
+  for (const r of list) for (const [k, v] of Object.entries(r.cats || {})) t[k] = (t[k] || 0) + (+v || 0);
+  return t;
+}
+const groupTotal = (cats, gid) => catsOf(gid).reduce((a, c) => a + pos(cats[c.code]), 0);
+const totalOf = (rs) => pos(rs.reduce((a, r) => a + r.count, 0));
 function groupDoors(rs) {
   const m = new Map();
   for (const r of rs) {
     const name = String(r.label || "").trim() || "Unnamed door";
     const k = name.toLowerCase();
-    const g = m.get(k) || { name, count: 0, hours: {}, mine: false };
-    g.count += r.count;
-    for (const [h, v] of Object.entries(r.hours || {})) g.hours[h] = (g.hours[h] || 0) + (+v || 0);
+    const g = m.get(k) || { name, count: 0, list: [], mine: false };
+    g.count += r.count; g.list.push(r);
     if (r.mine) g.mine = true;
     m.set(k, g);
   }
-  return [...m.values()].sort((a, b) => b.count - a.count);
+  return [...m.values()].map((g) => ({ ...g, cats: sumCats(g.list) })).sort((a, b) => b.count - a.count);
 }
-function hourTotals(rs) {
+function hourCats(rs) {
   const h = {};
-  for (const r of rs) for (const [k, v] of Object.entries(r.hours || {})) h[k] = (h[k] || 0) + (+v || 0);
+  for (const r of rs) for (const [hk, m] of Object.entries(r.hours || {})) {
+    const b = h[hk] || (h[hk] = {});
+    for (const [c, v] of Object.entries(m || {})) b[c] = (b[c] || 0) + (+v || 0);
+  }
   return h;
 }
+const hourTotal = (b) => pos(Object.values(b || {}).reduce((a, v) => a + (+v || 0), 0));
 const currentEvent = () => S.events.find((e) => e.id === S.eventId) || null;
-const totalOf = (rs) => Math.max(0, rs.reduce((a, r) => a + r.count, 0));
+
+// ---------- count screen: category buttons ----------
+function buildTiles() {
+  $("tiles").innerHTML = GROUPS.map((g) => `
+    <div class="col" role="group" aria-label="${esc(g.name)}">
+      <div class="col-h"><span class="g" style="--sw:${esc(catsOf(g.id)[0] ? catsOf(g.id)[0].color : "#888")}"><i></i>${esc(g.name)}</span><span class="gt" id="gt-${esc(g.id)}">0</span></div>
+      ${catsOf(g.id).map((c) => `<button class="tile" type="button" data-cat="${esc(c.code)}" style="--c:${esc(c.color)};--t:${esc(c.text)}" aria-label="Add one ${esc(c.code)}"><span class="code">${esc(c.code)}</span><span class="cnt" id="cnt-${esc(c.code)}">0</span></button>`).join("")}
+    </div>`).join("");
+}
+
+function buildChips() {
+  $("eventChips").innerHTML = EVENT_TYPES.map((t, i) => `<button class="chip" type="button" id="chip-${i}" aria-pressed="false">${esc(t)}</button>`).join("");
+}
 
 // ---------- rendering ----------
 function render() {
   $("view-setup").hidden = configured;
   $("view-login").hidden = !configured || !S.authReady || !!S.user;
   $("signedIn").hidden = !S.user;
-  $("templeName").textContent = String(S.settings.name || "").trim() || "Mandir Attendance";
-  document.title = $("templeName").textContent === "Mandir Attendance" ? "Mandir Attendance" : $("templeName").textContent + " · Attendance";
+  const name = String(S.settings.name || "").trim();
+  $("templeName").textContent = name || "Mandir Attendance";
+  document.title = name ? `${name} · Attendance` : "Mandir Attendance";
   updateSync();
   if (!S.user) return;
 
@@ -214,23 +283,28 @@ function renderCount() {
   $("chipDate").textContent = ev.date === todayStr() ? "Today" : fmtDate(ev.date);
   const rs = rows();
   const total = totalOf(rs);
+  const cats = sumCats(rs);
   $("total").textContent = num(total);
+  for (const c of CODES) { const el = $("cnt-" + c); if (el) el.textContent = num(pos(cats[c])); }
+  for (const g of GROUPS) { const el = $("gt-" + g.id); if (el) el.textContent = num(groupTotal(cats, g.id)); }
+
   const doors = groupDoors(rs);
   const mineKey = S.door.trim().toLowerCase() || "unnamed door";
   const door = doors.find((g) => g.name.toLowerCase() === mineKey);
-  $("doorCount").textContent = num(door ? Math.max(0, door.count) : 0);
+  $("doorCount").textContent = num(door ? pos(door.count) : 0);
   const recent = rs.filter((r) => r.updatedAt && Date.now() - r.updatedAt < 15 * 60000).length;
   const active = doors.filter((g) => g.count > 0).length;
   $("phones").textContent = !S.stationsLoaded ? "Loading the live count…"
     : total === 0 ? "Waiting for the first arrival"
-    : `${active} door${active === 1 ? "" : "s"} · ${recent ? `${recent} phone${recent === 1 ? "" : "s"} active in the last 15 min` : "no taps in the last 15 min"}`;
+    : `${active} door${active === 1 ? "" : "s"} · ${recent ? `${recent} phone${recent === 1 ? "" : "s"} active` : "no taps in 15 min"}`;
   if (document.activeElement !== $("doorInput")) $("doorInput").value = S.door;
+
   const off = S.blocked || !tally;
-  $("tap").disabled = off;
-  $("plus2").disabled = off;
-  $("plus5").disabled = off;
-  $("minus").disabled = off || total <= 0 || !door || door.count <= 0;
+  for (const t of document.querySelectorAll(".tile")) t.disabled = off;
   $("doorInput").disabled = off;
+  const last = tally && tally.undoStack[tally.undoStack.length - 1];
+  $("undo").disabled = off || !last;
+  $("undoDetail").textContent = last ? `${last.cat} · ${fmtTime(last.at)}` : "";
 }
 
 function renderReport() {
@@ -241,35 +315,84 @@ function renderReport() {
   $("repDate").textContent = fmtDate(ev.date);
   $("repName").textContent = ev.name || "Untitled";
   const rs = rows();
-  $("repTotal").textContent = num(totalOf(rs));
-  const hrs = hourTotals(rs);
-  const keys = Object.keys(hrs).filter((k) => hrs[k] > 0).map(Number).sort((a, b) => a - b);
+  const counted = rs.filter((r) => r.count !== 0);
+  const total = totalOf(rs);
+  const cats = sumCats(rs);
+  const hc = hourCats(rs);
+  const hours = Object.keys(hc).filter((k) => hourTotal(hc[k]) > 0).map(Number).sort((a, b) => a - b);
+
+  // headline numbers
+  $("repTotal").textContent = num(total);
   let peak = null;
-  for (const k of keys) if (peak == null || hrs[pad(k)] > hrs[pad(peak)]) peak = k;
-  $("repPeak").textContent = peak == null ? "—" : `${hourRange(peak)} · ${num(hrs[pad(peak)])}`;
+  for (const h of hours) if (peak == null || hourTotal(hc[pad(h)]) > hourTotal(hc[pad(peak)])) peak = h;
+  $("repPeak").textContent = peak == null ? "—" : `${hourRange(peak)} · ${num(hourTotal(hc[pad(peak)]))}`;
+  const first = Math.min(...counted.map((r) => r.startedAt || Infinity));
+  const last = Math.max(...counted.map((r) => r.updatedAt || 0));
+  $("repWindow").textContent = counted.length && isFinite(first) && last ? `${fmtTime(first)} – ${fmtTime(last)}` : "—";
 
-  const doors = groupDoors(rs).filter((g) => g.count !== 0);
-  const max = Math.max(1, ...doors.map((d) => d.count));
-  $("repDoorsNote").textContent = doors.length ? `${doors.length} door${doors.length === 1 ? "" : "s"}` : "";
-  $("repDoors").innerHTML = doors.length ? doors.map((d) => `
-    <div class="drow">
-      <span class="nm">${esc(d.name)}${d.mine ? '<span class="you">this phone</span>' : ""}</span>
-      <span class="ct">${num(Math.max(0, d.count))}</span>
-      <span class="track"><span class="fill" style="width:${Math.max(0, d.count) / max * 100}%"></span></span>
-    </div>`).join("") : '<div class="empty">No one counted yet.</div>';
+  // by category
+  $("repCatNote").textContent = total ? `of ${num(total)}` : "";
+  $("repCats").innerHTML = GROUPS.map((g) => {
+    const gt = groupTotal(cats, g.id);
+    const list = catsOf(g.id);
+    const max = Math.max(1, ...list.map((c) => pos(cats[c.code])));
+    return `<div class="cgroup">
+      <div class="cgroup-h"><span class="g" style="--sw:${esc(list[0] ? list[0].color : "#888")}"><i></i>${esc(g.name)}</span><span class="gt">${num(gt)} · ${pct(gt, total)}</span></div>
+      ${list.map((c) => { const v = pos(cats[c.code]); return `<div class="crow" style="--c:${esc(c.color)}"><span class="sw"></span><span class="nm">${esc(c.code)}</span><span class="ct">${num(v)}</span><span class="pc">${pct(v, total)}</span><span class="track"><span class="fill" style="width:${(v / max) * 100}%"></span></span></div>`; }).join("")}
+    </div>`;
+  }).join("");
 
-  if (!keys.length) {
+  // arrivals by hour: one stacked bar per hour, a segment per group
+  $("repLegend").innerHTML = GROUPS.map((g) => `<span style="--sw:var(--g-${esc(g.id)})"><i></i>${esc(g.name)}</span>`).join("");
+  if (!hours.length) {
     $("repChart").innerHTML = '<div class="empty">Arrivals will chart here by the hour as people are counted.</div>';
+    $("repChartDetail").textContent = "";
+    $("repHourTable").innerHTML = "";
   } else {
-    const from = keys[0], to = keys[keys.length - 1];
-    const hmax = Math.max(1, ...keys.map((k) => hrs[pad(k)]));
-    let html = '<div class="bars">';
+    const from = hours[0], to = hours[hours.length - 1];
+    const hmax = Math.max(1, ...hours.map((h) => hourTotal(hc[pad(h)])));
+    if (S.selHour == null || S.selHour < from || S.selHour > to) S.selHour = peak;
+    let html = '<div class="bars" role="group" aria-label="Arrivals by hour">';
     for (let h = from; h <= to; h++) {
-      const v = Math.max(0, hrs[pad(h)] || 0);
-      html += `<div class="bar" title="${hourRange(h)}: ${v}"><span class="v">${v ? num(v) : ""}</span><span class="b${h === peak ? " peak" : ""}" style="height:${v / hmax * 100}%"></span><span class="h">${hourLabel(h)}</span></div>`;
+      const b = hc[pad(h)] || {};
+      const t = hourTotal(b);
+      const segs = GROUPS.map((g) => {
+        const v = groupTotal(b, g.id);
+        return v > 0 ? `<span class="seg" style="height:${(v / hmax) * 136}px;background:var(--g-${esc(g.id)})"></span>` : "";
+      }).join("");
+      html += `<button class="bar" type="button" data-hour="${h}" aria-pressed="${h === S.selHour}" aria-label="${hourRange(h)}: ${t}"><span class="v">${t ? num(t) : ""}</span><span class="stack">${segs}</span><span class="base"></span><span class="h">${hourLabel(h)}</span></button>`;
     }
     $("repChart").innerHTML = html + "</div>";
+    renderHourDetail(hc);
+    $("repHourTable").innerHTML = catTable("Hour", hours.map((h) => ({ name: hourRange(h), cats: hc[pad(h)] || {} })), cats);
   }
+
+  // by door
+  const doors = groupDoors(rs).filter((g) => g.count !== 0);
+  $("repDoorsNote").textContent = doors.length ? `${doors.length} door${doors.length === 1 ? "" : "s"}` : "";
+  $("repDoorTable").innerHTML = doors.length
+    ? catTable("Door", doors.map((d) => ({ name: d.name + (d.mine ? " (this phone)" : ""), cats: d.cats })), cats)
+    : '<div class="empty">No one counted yet.</div>';
+}
+
+function renderHourDetail(hc) {
+  const h = S.selHour;
+  if (h == null) { $("repChartDetail").textContent = ""; return; }
+  const b = hc[pad(h)] || {};
+  const parts = GROUPS.map((g) => `${esc(g.name)} ${num(groupTotal(b, g.id))} (${catsOf(g.id).map((c) => `${esc(c.code)} ${num(pos(b[c.code]))}`).join(", ")})`);
+  $("repChartDetail").innerHTML = `<b>${hourRange(h)}</b> · ${num(hourTotal(b))} people · ${parts.join(" · ")}`;
+}
+
+function catTable(firstHead, list, totals) {
+  const head = `<tr><th>${esc(firstHead)}</th>${CATS.map((c) => `<th><i style="--c:${esc(c.color)}"></i>${esc(c.code)}</th>`).join("")}${GROUPS.map((g) => `<th>${esc(g.name)}</th>`).join("")}<th>Total</th></tr>`;
+  const cell = (v) => `<td${v ? "" : ' class="zero"'}>${num(pos(v))}</td>`;
+  const body = list.map((r) => {
+    const t = CODES.reduce((a, c) => a + pos(r.cats[c]), 0);
+    return `<tr><td>${esc(r.name)}</td>${CODES.map((c) => cell(r.cats[c])).join("")}${GROUPS.map((g) => cell(groupTotal(r.cats, g.id))).join("")}${cell(t)}</tr>`;
+  }).join("");
+  const all = CODES.reduce((a, c) => a + pos(totals[c]), 0);
+  const sum = `<tr class="sum"><td>Total</td>${CODES.map((c) => cell(totals[c])).join("")}${GROUPS.map((g) => cell(groupTotal(totals, g.id))).join("")}${cell(all)}</tr>`;
+  return `<table class="data"><thead>${head}</thead><tbody>${body}${sum}</tbody></table>`;
 }
 
 function renderEvents() {
@@ -312,9 +435,10 @@ async function fetchTotals(all) {
       if (c && Date.now() - c.at < 60000) continue;
       try {
         const snap = await getDocs(collection(db, "events", e.id, "stations"));
-        let t = 0; snap.forEach((d) => { t += +(d.data().count) || 0; });
-        S.totals.set(e.id, { total: Math.max(0, t), at: Date.now() });
-      } catch (err) { S.totals.set(e.id, { total: null, at: Date.now() }); }
+        const rs = [];
+        snap.forEach((d) => { const x = d.data(); rs.push({ count: +x.count || 0, cats: x.cats || {} }); });
+        S.totals.set(e.id, { total: totalOf(rs), cats: sumCats(rs), at: Date.now() });
+      } catch (err) { S.totals.set(e.id, { total: null, cats: null, at: Date.now() }); }
       if (S.tab === "events") renderEvents();
       if (!all && S.tab !== "events") break;
     }
@@ -356,7 +480,7 @@ function selectEvent(id) {
   if (S.eventId === id) return;
   if (unsubStations) { unsubStations(); unsubStations = null; }
   if (tally) tally.flushNow(); // the previous tally finishes saving on its own
-  S.eventId = id;
+  S.eventId = id; S.selHour = null;
   if (id) lsSet("eventId", id);
   S.stations = new Map(); S.stationsLoaded = false;
   tally = id ? new Tally(id) : null;
@@ -414,12 +538,12 @@ $("signOut").addEventListener("click", async () => {
   try { await signOut(auth); } catch (e) {}
 });
 
-async function createEvent(e) {
+function createEvent(e) {
   e.preventDefault();
   const name = $("newName").value.trim().slice(0, 60);
   const date = $("newDate").value || todayStr();
   $("newMsg").textContent = "";
-  if (!name) { $("newMsg").textContent = "Give the occasion a name, or tap one of the suggestions."; $("newName").focus(); return; }
+  if (!name) { $("newMsg").textContent = "Give the event a name, or tap one of the suggestions."; $("newName").focus(); return; }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { $("newMsg").textContent = "Pick a date for the event."; return; }
   const id = date + "-" + Math.random().toString(36).slice(2, 7);
   const body = { name, date, createdAt: Date.now() };
@@ -466,27 +590,42 @@ function download(filename, lines) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
+const catHeader = (first) => [first, ...CODES, ...GROUPS.map((g) => g.name), "Total"];
+const catLine = (first, cats) => [first, ...CODES.map((c) => pos(cats[c])), ...GROUPS.map((g) => groupTotal(cats, g.id)), CODES.reduce((a, c) => a + pos(cats[c]), 0)];
+
 $("csvEvent").addEventListener("click", () => {
   const ev = currentEvent(); if (!ev) return;
   const rs = rows();
-  const doors = groupDoors(rs).filter((g) => g.count !== 0);
-  const hrs = hourTotals(rs);
-  const keys = Object.keys(hrs).map(Number).sort((a, b) => a - b);
-  const lines = [["Event", ev.name], ["Date", ev.date], [], ["Hour", ...doors.map((d) => d.name), "Total"]];
-  for (const h of keys) lines.push([hourRange(h), ...doors.map((d) => Math.max(0, d.hours[pad(h)] || 0)), Math.max(0, hrs[pad(h)] || 0)]);
-  lines.push(["Total", ...doors.map((d) => Math.max(0, d.count)), totalOf(rs)]);
+  const counted = rs.filter((r) => r.count !== 0);
+  const cats = sumCats(rs);
+  const hc = hourCats(rs);
+  const hours = Object.keys(hc).map(Number).sort((a, b) => a - b);
+  const first = Math.min(...counted.map((r) => r.startedAt || Infinity));
+  const last = Math.max(0, ...counted.map((r) => r.updatedAt || 0));
+  const lines = [
+    ["Event", ev.name], ["Date", ev.date],
+    ["Counting from", counted.length && isFinite(first) ? fmtTime(first) : ""], ["Counting to", last ? fmtTime(last) : ""],
+    [], ["By category"], catHeader(""), catLine("Total", cats),
+    [], ["By hour"], catHeader("Hour"),
+  ];
+  for (const h of hours) lines.push(catLine(hourRange(h), hc[pad(h)] || {}));
+  lines.push(catLine("Total", cats));
+  lines.push([], ["By door"], catHeader("Door"));
+  for (const d of groupDoors(rs).filter((g) => g.count !== 0)) lines.push(catLine(d.name, d.cats));
+  lines.push(catLine("Total", cats));
   download(`${slug(ev.name)}-${ev.date}.csv`, lines);
 });
+
 $("csvAll").addEventListener("click", async () => {
   $("csvAll").disabled = true;
   S.totals.forEach((v) => { v.at = 0; });
   await fetchTotals(true);
   $("csvAll").disabled = false;
-  const live = totalOf(rows());
-  const lines = [["Date", "Event", "Total"]];
+  const liveCats = sumCats(rows());
+  const lines = [["Date", ...catHeader("Event")]];
   for (const e of S.events) {
-    const t = e.id === S.eventId ? live : (S.totals.get(e.id) || {}).total;
-    lines.push([e.date, e.name, t == null ? "" : t]);
+    const cats = e.id === S.eventId ? liveCats : (S.totals.get(e.id) || {}).cats;
+    lines.push(cats ? [e.date, ...catLine(e.name, cats)] : [e.date, e.name]);
   }
   download(`attendance-${todayStr()}.csv`, lines);
 });
@@ -507,25 +646,24 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // ---------- counting ----------
-function tap(n) {
-  if (!tally || S.blocked) return;
-  tally.add(n);
-  if (n > 0) {
-    S.spin = (S.spin + 12 * n) % 360;
-    $("tap").style.setProperty("--spin", S.spin + "deg");
-    const f = document.createElement("span");
-    f.className = "float"; f.textContent = "+" + n;
-    $("floaters").appendChild(f);
-    setTimeout(() => f.remove(), 750);
-  }
-  try { navigator.vibrate && navigator.vibrate(n > 0 ? 12 : [10, 40, 10]); } catch (e) {}
+$("tiles").addEventListener("click", (e) => {
+  const tile = e.target.closest(".tile");
+  if (!tile || tile.disabled || !tally || S.blocked) return;
+  tally.add(tile.dataset.cat);
+  tile.classList.remove("hit"); void tile.offsetWidth; tile.classList.add("hit");
+  const p = document.createElement("span");
+  p.className = "pop"; p.textContent = "+1";
+  tile.appendChild(p);
+  setTimeout(() => p.remove(), 650);
+  try { navigator.vibrate && navigator.vibrate(12); } catch (err) {}
   keepAwake();
   renderCount();
-}
-$("tap").addEventListener("click", () => tap(1));
-$("plus2").addEventListener("click", () => tap(2));
-$("plus5").addEventListener("click", () => tap(5));
-$("minus").addEventListener("click", () => tap(-1));
+});
+$("undo").addEventListener("click", () => {
+  if (!tally || S.blocked) return;
+  if (tally.undo()) { try { navigator.vibrate && navigator.vibrate([10, 40, 10]); } catch (err) {} }
+  renderCount();
+});
 
 let doorTimer = null;
 $("doorInput").addEventListener("input", () => {
@@ -539,6 +677,20 @@ $("doorInput").addEventListener("input", () => {
 });
 $("doorInput").addEventListener("blur", () => { if (!$("doorInput").value.trim()) $("doorInput").value = S.door; });
 
+$("repChart").addEventListener("click", (e) => {
+  const b = e.target.closest(".bar");
+  if (!b) return;
+  S.selHour = +b.dataset.hour;
+  renderReport();
+});
+$("repChart").addEventListener("mouseover", (e) => {
+  const b = e.target.closest(".bar");
+  if (!b || +b.dataset.hour === S.selHour) return;
+  S.selHour = +b.dataset.hour;
+  for (const x of document.querySelectorAll("#repChart .bar")) x.setAttribute("aria-pressed", String(+x.dataset.hour === S.selHour));
+  renderHourDetail(hourCats(rows()));
+});
+
 function switchTab(t) {
   S.tab = t; lsSet("tab", t); S.armed = null;
   if (location.hash !== "#" + t) history.replaceState(null, "", "#" + t);
@@ -548,14 +700,13 @@ function switchTab(t) {
 for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => switchTab(b.dataset.tab));
 $("eventChip").addEventListener("click", () => switchTab("events"));
 
-for (const c of document.querySelectorAll(".chip")) {
-  c.setAttribute("aria-pressed", "false");
-  c.addEventListener("click", () => {
-    for (const o of document.querySelectorAll(".chip")) o.setAttribute("aria-pressed", String(o === c));
-    $("newName").value = c.textContent;
-    $("newMsg").textContent = "";
-  });
-}
+$("eventChips").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip");
+  if (!c) return;
+  for (const o of document.querySelectorAll(".chip")) o.setAttribute("aria-pressed", String(o === c));
+  $("newName").value = c.textContent;
+  $("newMsg").textContent = "";
+});
 $("newName").addEventListener("input", () => {
   for (const o of document.querySelectorAll(".chip")) o.setAttribute("aria-pressed", String(o.textContent === $("newName").value.trim()));
 });
@@ -575,11 +726,12 @@ $("elist").addEventListener("click", (e) => {
 });
 
 // ---------- boot ----------
+buildTiles();
+buildChips();
 const tabs = ["count", "report", "events"];
 const hash = (location.hash || "").slice(1);
 S.tab = tabs.includes(hash) ? hash : (tabs.includes(lsGet("tab")) ? lsGet("tab") : "count");
 $("newDate").value = todayStr();
-$("loginUser").placeholder = "door";
 render();
 
 if (configured) {

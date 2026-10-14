@@ -24,9 +24,10 @@ service cloud.firestore {
     }
 
     function validStation(d) {
-      return d.keys().hasOnly(['label', 'count', 'hours', 'startedAt', 'updatedAt'])
+      return d.keys().hasOnly(['label', 'count', 'cats', 'hours', 'startedAt', 'updatedAt'])
         && d.label is string && d.label.size() <= 40
         && d.count is int && d.count > -100000 && d.count < 100000
+        && d.cats is map && d.cats.size() <= 16
         && d.hours is map && d.hours.size() <= 24
         && d.startedAt is number
         && d.updatedAt is number;
@@ -38,7 +39,7 @@ service cloud.firestore {
       allow update: if isAdmin() && validEvent(request.resource.data);
       allow delete: if isAdmin();
 
-      // One document per phone session, holding that phone's tally for the event.
+      // One document per phone session, holding that phone's tally for the event by category and hour.
       match /stations/{stationId} {
         allow read: if signedIn();
         allow create, update: if signedIn()

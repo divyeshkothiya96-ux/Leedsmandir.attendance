@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mandir Attendance</title>
-<meta name="description" content="Live headcount for mandir events. Volunteers tap at each door and everyone sees one shared total.">
+<meta name="description" content="Live headcount by category for mandir event days. Volunteers tap at each door and everyone sees one shared total.">
 <meta name="theme-color" content="#14111F" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F4F1F8" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -65,16 +65,18 @@
     <section id="view-count" class="view" aria-labelledby="tab-count">
       <div id="countEmpty" class="start" hidden>
         <h2 class="section-h" id="startTitle">Start today's count</h2>
-        <p class="lead" id="startText">Name the occasion, then share the link and door login with whoever is on each door. Every phone adds to one live total.</p>
+        <p class="lead" id="startText">Pick the event, then share the link and door login with whoever is on each door. Every phone adds to one live total.</p>
         <div id="countSlot"></div>
       </div>
 
-      <div id="countMain" class="view" hidden>
+      <div id="countMain" class="view tight" hidden>
         <button class="event-chip" id="eventChip" type="button" aria-label="Change event"><span class="n" id="chipName">—</span><span class="d" id="chipDate"></span><span class="chev" aria-hidden="true">›</span></button>
 
-        <div class="total-block">
-          <div class="eyebrow">Inside so far, all doors</div>
-          <div class="total" id="total" aria-live="polite">0</div>
+        <div class="total-row">
+          <div class="total-block">
+            <div class="eyebrow">Inside so far, all doors</div>
+            <div class="total" id="total" aria-live="polite">0</div>
+          </div>
           <div class="sub" id="phones">Waiting for the first arrival</div>
         </div>
 
@@ -84,16 +86,9 @@
           <span class="dc"><small>this door</small><span id="doorCount">0</span></span>
         </div>
 
-        <div class="tapwrap">
-          <button class="tap" id="tap" type="button" aria-label="Add one person"><span class="p">+1</span><span class="s">Tap for each person</span></button>
-          <div class="floaters" id="floaters" aria-hidden="true"></div>
-        </div>
+        <div class="grid" id="tiles"></div>
 
-        <div class="quick">
-          <button class="q q-minus" id="minus" type="button" aria-label="Take one away">−1<small>undo</small></button>
-          <button class="q" id="plus2" type="button" aria-label="Add two people">+2</button>
-          <button class="q" id="plus5" type="button" aria-label="Add five people">+5</button>
-        </div>
+        <button class="undo" id="undo" type="button" disabled><span>Undo last tap</span><span class="undo-d" id="undoDetail"></span></button>
       </div>
     </section>
 
@@ -105,20 +100,33 @@
           <div class="eyebrow" id="repDate"></div>
           <h2 class="section-h" id="repName"></h2>
         </div>
+
         <div class="panel">
           <div class="stats">
             <div class="stat"><span class="eyebrow">Total attendance</span><span class="v" id="repTotal">0</span></div>
             <div class="stat"><span class="eyebrow">Busiest hour</span><span class="v small" id="repPeak">—</span></div>
+            <div class="stat wide"><span class="eyebrow">Counting window</span><span class="v small" id="repWindow">—</span></div>
           </div>
         </div>
+
         <div class="panel">
-          <div class="panel-h"><h3>By door</h3><span id="repDoorsNote"></span></div>
-          <div class="doors" id="repDoors"></div>
+          <div class="panel-h"><h3>By category</h3><span id="repCatNote"></span></div>
+          <div class="cats" id="repCats"></div>
         </div>
+
         <div class="panel">
           <div class="panel-h"><h3>Arrivals by hour</h3><span>local time</span></div>
+          <div class="legend" id="repLegend"></div>
           <div class="chart" id="repChart"></div>
+          <div class="chart-detail" id="repChartDetail" aria-live="polite"></div>
+          <div class="table-wrap" id="repHourTable"></div>
         </div>
+
+        <div class="panel">
+          <div class="panel-h"><h3>By door</h3><span id="repDoorsNote"></span></div>
+          <div class="table-wrap" id="repDoorTable"></div>
+        </div>
+
         <div class="row-2">
           <button class="btn btn-ghost" id="csvEvent" type="button">Download this event as CSV</button>
         </div>
@@ -130,16 +138,10 @@
       <div id="eventsSlot">
         <form class="form" id="newEvent" autocomplete="off" novalidate>
           <div class="field">
-            <label for="newName">Occasion</label>
-            <input id="newName" type="text" maxlength="60" placeholder="e.g. Sandhya Aarti">
+            <label for="newName">Event</label>
+            <input id="newName" type="text" maxlength="60" placeholder="e.g. Annakut">
           </div>
-          <div class="chips" role="group" aria-label="Quick names">
-            <button class="chip" type="button" id="chip-darshan">Darshan</button>
-            <button class="chip" type="button" id="chip-mangla">Mangla Aarti</button>
-            <button class="chip" type="button" id="chip-sandhya">Sandhya Aarti</button>
-            <button class="chip" type="button" id="chip-satsang">Satsang</button>
-            <button class="chip" type="button" id="chip-festival">Festival day</button>
-          </div>
+          <div class="chips" id="eventChips" role="group" aria-label="Event types"></div>
           <div class="row-2">
             <div class="field">
               <label for="newDate">Date</label>
@@ -154,7 +156,7 @@
       <div class="panel">
         <div class="panel-h"><h3>Events</h3><span id="eventsNote"></span></div>
         <div class="elist" id="elist"><div class="empty">Loading events…</div></div>
-        <div class="row-2"><button class="btn btn-ghost" id="csvAll" type="button" hidden>Download all totals as CSV</button></div>
+        <div class="row-2"><button class="btn btn-ghost" id="csvAll" type="button" hidden>Download all events as CSV</button></div>
         <div class="msg" id="evMsg" role="alert"></div>
       </div>
 
