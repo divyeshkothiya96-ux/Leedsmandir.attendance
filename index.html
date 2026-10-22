@@ -9,12 +9,22 @@
 <meta name="theme-color" content="#FAF4E8" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Leeds Mandir">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23F4A62A'/%3E%3Ctext x='32' y='43' font-size='30' text-anchor='middle' font-family='Georgia,serif' fill='%232B1800'%3E%2B1%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="Footfall">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Footfall">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Rozha+One&display=swap">
 <link rel="stylesheet" href="styles.css">
+<script>
+  // Runs before the main app: registers the offline helper and keeps Android's install prompt for later.
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(function () {});
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__installEvent = e; });
+</script>
 <script src="config.js"></script>
 <script type="module" src="app.js"></script>
 </head>
@@ -63,6 +73,7 @@
       <button class="btn" id="loginBtn" type="submit">Sign in</button>
       <div class="msg" id="loginMsg" role="alert"></div>
     </form>
+    <div id="installSlotLogin"></div>
   </section>
 
   <!-- SIGNED IN -->
@@ -183,11 +194,26 @@
         <div class="msg" id="nameMsg" role="alert"></div>
       </div>
 
+      <div id="installSlotEvents"></div>
+
       <div class="account">
         <span>Signed in as <strong id="whoami"></strong></span>
         <button class="small-btn" id="signOut" type="button">Sign out</button>
       </div>
     </section>
+  </div>
+
+  <!-- Add to home screen: moved by app.js to the sign-in screen or the Events tab -->
+  <div class="install" id="installCard" hidden>
+    <img class="install-icon" src="icons/icon-192.png" alt="" width="48" height="48">
+    <div class="install-text">
+      <h3>Add Footfall to your home screen</h3>
+      <p id="installText">Opens full screen like an app, with its own icon.</p>
+      <div class="install-acts">
+        <button class="btn" id="installBtn" type="button" hidden>Add to home screen</button>
+        <button class="small-btn" id="installLater" type="button">Not now</button>
+      </div>
+    </div>
   </div>
 
   <footer class="foot" aria-hidden="true"><span class="rule"></span><span class="lotus"></span><span class="rule"></span></footer>

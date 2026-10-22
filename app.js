@@ -248,6 +248,7 @@ function render() {
   $("templeName").textContent = name || "Leeds Mandir Footfall Counts";
   document.title = name || "Leeds Mandir Footfall Counts";
   updateSync();
+  renderInstall();
   if (!S.user) return;
 
   for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", String(b.dataset.tab === S.tab));
@@ -725,6 +726,45 @@ $("elist").addEventListener("click", (e) => {
     armTimer = setTimeout(() => { S.armed = null; if (S.tab === "events") renderEvents(); }, 4000);
   }
 });
+
+// ---------- add to home screen ----------
+// Android (Chrome, Edge, Samsung) offers its own install prompt, kept here until the volunteer taps the button.
+// iPhones have no prompt, so the card explains the Share > Add to Home Screen steps instead.
+const isStandalone = () => (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+const ua = navigator.userAgent || "";
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+const isMobile = isIOS || /Android/.test(ua);
+let installEvent = window.__installEvent || null;
+let installDismissed = lsGet("installDismissed") === "1";
+
+function renderInstall() {
+  const card = $("installCard");
+  const onLogin = configured && S.authReady && !S.user;
+  const onEvents = !!S.user && S.tab === "events";
+  const slot = onLogin ? $("installSlotLogin") : $("installSlotEvents");
+  if (card.parentNode !== slot) slot.appendChild(card);
+  const offer = !isStandalone() && (!!installEvent || isMobile);
+  card.hidden = !offer || !(onEvents || (onLogin && !installDismissed));
+  if (card.hidden) return;
+  $("installBtn").hidden = !installEvent;
+  $("installLater").hidden = !onLogin;
+  $("installText").textContent = installEvent
+    ? "Opens full screen like an app, with its own icon on your home screen."
+    : isIOS
+      ? "Tap the Share button (the square with an arrow), then Add to Home Screen. Sign in once inside the new app."
+      : "Open the browser menu (⋮), then tap Add to Home screen or Install app.";
+}
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvent = e; renderInstall(); });
+window.addEventListener("appinstalled", () => { installEvent = window.__installEvent = null; renderInstall(); });
+$("installBtn").addEventListener("click", async () => {
+  const ev = installEvent;
+  if (!ev) return;
+  installEvent = window.__installEvent = null;
+  try { await ev.prompt(); await ev.userChoice; } catch (e) {}
+  renderInstall();
+});
+$("installLater").addEventListener("click", () => { installDismissed = true; lsSet("installDismissed", "1"); renderInstall(); });
+
 
 // ---------- boot ----------
 buildTiles();

@@ -11,7 +11,14 @@ It runs as a plain web page on GitHub Pages, with Firebase (Google's free app pl
 3. Type the door name under **Counting at**, then tap the right category button once per person. **Undo last tap** takes back this phone's most recent taps, one at a time.
 4. The **Report** tab shows the total, the busiest hour, the counting window (first to last tap), every category with its share, arrivals by hour (blue and pink per hour, with an hour-by-category table) and each door's counts. It can download a CSV with all of it.
 
-Tips: add the page to the phone's home screen so it opens like an app. The screen stays awake on the Count tab. If the Wi-Fi drops, taps are kept on the phone and sent when it reconnects.
+## Add it to the phone's home screen
+
+The app installs like a phone app (a PWA), with its own icon, opening full screen. No app store is needed.
+
+- **Android (Chrome, Edge, Samsung Internet):** open the link and tap **Add to home screen** on the card under the sign-in box, or open the browser menu (⋮) and choose **Install app** / **Add to Home screen**.
+- **iPhone (Safari):** open the link, tap the **Share** button (the square with an arrow), then **Add to Home Screen**. Sign in once inside the new app, because iPhones keep a separate sign-in for home-screen apps.
+
+The card also appears on the Events tab until the app is installed. Once installed, the app opens even on weak Wi-Fi, using the copy saved on the phone, and picks up changes from GitHub the next time it opens online. The screen stays awake on the Count tab, and if the Wi-Fi drops, taps are kept on the phone and sent when it reconnects.
 
 ## Who can do what
 

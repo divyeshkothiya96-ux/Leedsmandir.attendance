@@ -42,6 +42,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
+body { overflow-x: clip; } /* nothing decorative may push the page sideways */
 body {
   background: var(--bg);
   color: var(--fg);
@@ -133,7 +134,7 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clam
 
 /* Faint rangoli mandala behind the total */
 .mandala {
-  position: absolute; right: -28px; top: 50%; width: 190px; height: 190px; transform: translateY(-50%);
+  position: absolute; right: -14px; top: 50%; width: 190px; height: 190px; transform: translateY(-50%);
   background: var(--motif);
   -webkit-mask: url("img/mandala.svg") center / contain no-repeat;
           mask: url("img/mandala.svg") center / contain no-repeat;
@@ -150,6 +151,20 @@ h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clam
 .foot { display: flex; align-items: center; gap: 12px; padding-top: 18px; }
 .foot .rule { flex: 1; height: 1px; background: var(--line); }
 .foot .lotus { width: 34px; height: 21px; opacity: 0.85; }
+
+/* Add to home screen card */
+.install {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 14px; align-items: start;
+  padding: 14px 16px; background: var(--surface); border: 1px dashed var(--marigold); border-radius: 16px;
+}
+.install-icon { width: 48px; height: 48px; border-radius: 12px; display: block; }
+.install-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.install-text h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.install-text p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.install-acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 8px; }
+.install-acts .btn { padding: 10px 16px 8px; }
+.install-acts:not(:has(:not([hidden]))) { display: none; }
+#installSlotLogin:not(:empty) { margin-top: 4px; }
 
 /* Category buttons: two columns, dark to light */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
