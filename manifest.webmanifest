@@ -1,7 +1,7 @@
 {
   "id": "leeds-mandir-footfall",
   "name": "Leeds Mandir Footfall Counts",
-  "short_name": "Footfall",
+  "short_name": "LM Footfall",
   "description": "Live footfall counts by category for Leeds Mandir event days.",
   "start_url": "./#count",
   "scope": "./",

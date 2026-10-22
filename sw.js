@@ -2,7 +2,7 @@
 // The app's own files load fresh from the internet when it answers within a few seconds, and from this
 // phone's copy otherwise, so the app still opens on weak Wi-Fi. Counts and logins are not handled here:
 // Firebase keeps those itself.
-const CACHE = "footfall-v1";
+const CACHE = "footfall-v2";
 const SHELL = [
   "./", "index.html", "styles.css", "app.js", "config.js", "manifest.webmanifest",
   "img/toran.svg", "img/lotus.svg", "img/mandala.svg",
